@@ -15,6 +15,6 @@ defmodule Stompex.Mixfile do
   end
 
   defp deps do
-    []
+    [{:connection, "~> 1.0"}]
   end
 end

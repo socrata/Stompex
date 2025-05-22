@@ -6,7 +6,7 @@ defmodule Stompex.Receiver.Api do
       alias Stompex.Receiver.State
 
       def start_link(conn) do
-        GenServer.start_link(__MODULE__, [conn, self()], name: __MODULE__)
+        GenServer.start_link(__MODULE__, [conn, self()])
       end
 
       def init([conn, caller]) do
