@@ -9,7 +9,7 @@ defmodule Stompex.Api do
 
       @doc false
       def start_link(host, port, login, passcode, headers, timeout \\ @connection_timeout) do
-        Connection.start_link(__MODULE__, { host, port, login, passcode, headers, timeout, self() })
+        Supervisor.start_link(__MODULE__, { host, port, login, passcode, headers, timeout, self() })
       end
 
       @doc false

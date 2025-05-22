@@ -1,9 +1,10 @@
 defmodule Stompex do
-  use Connection
   use Stompex.Api
   require Logger
-
   import Stompex.FrameBuilder
+
+  @behaviour :gen_statem
+  @type server :: :gen_statem.server()
 
   @tcp_opts [:binary, active: false]
 
@@ -25,7 +26,8 @@ defmodule Stompex do
       |> finish_frame()
 
     { :close, from } = info
-    Connection.reply(from, :ok)
+    :gen_statem.reply(from, :ok)
+
     GenServer.stop(receiver)
 
     case :gen_tcp.send(sock, frame) do
@@ -84,7 +86,6 @@ defmodule Stompex do
     error = "Server rejected connection"
     { :stop, error, error }
   end
-
 
   @doc false
   def handle_call({ :register_callback, destination, func }, _, %{ callbacks: callbacks } = state) do
