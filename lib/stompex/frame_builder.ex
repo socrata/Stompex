@@ -172,7 +172,7 @@ defmodule Stompex.FrameBuilder do
         %{ frame | cmd: cmd }
 
       false ->
-        Logger.warn("Ignoring `set_command/2` call. Command '#{cmd}' is invalid")
+        Logger.warning("Ignoring `set_command/2` call. Command '#{cmd}' is invalid")
         frame
     end
   end
