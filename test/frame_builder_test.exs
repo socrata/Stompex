@@ -135,7 +135,7 @@ defmodule FrameBuilderTest do
         |> set_body("testing")
         |> finish_frame
 
-      assert frame == (%Frame{ body: "testing" <> <<0>> <> "\n" } |> to_string() |> to_char_list)
+      assert frame == (%Frame{ body: "testing" <> <<0>> <> "\n" } |> to_string() |> to_charlist)
     end
   end
 

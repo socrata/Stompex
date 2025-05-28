@@ -3,15 +3,15 @@ defmodule Stompex.Mixfile do
 
   def project do
     [app: :stompex,
-     version: "0.2.0",
-     elixir: "~> 1.3",
+     version: "0.3.0",
+     elixir: "~> 1.17",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps()]
   end
 
   def application do
-    [applications: [:logger]]
+    extra_applications: [:logger]
   end
 
   defp deps do

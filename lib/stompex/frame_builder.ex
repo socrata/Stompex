@@ -253,7 +253,7 @@ defmodule Stompex.FrameBuilder do
     |> append_body(<<0>>, new_line: false)
     |> append_body(@eol, new_line: false)
     |> to_string()
-    |> to_char_list()
+    |> to_charlist()
   end
 
 
