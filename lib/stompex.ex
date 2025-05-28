@@ -9,7 +9,7 @@ defmodule Stompex do
 
   @doc false
   def connect(_info, %{ sock: nil, host: host, port: port, timeout: timeout } = state) do
-    case :gen_tcp.connect(to_char_list(host), port, @tcp_opts, timeout) do
+    case :gen_tcp.connect(to_charlist(host), port, @tcp_opts, timeout) do
       { :ok, sock } ->
         stomp_connect(sock, state)
 
@@ -88,8 +88,8 @@ defmodule Stompex do
 
   @doc false
   def handle_call({ :register_callback, destination, func }, _, %{ callbacks: callbacks } = state) do
-    dest_callbacks = Dict.get(callbacks, destination, []) ++ [func]
-    callbacks = case Dict.has_key?(callbacks, destination) do
+    dest_callbacks = Map.get(callbacks, destination, []) ++ [func]
+    callbacks = case Map.has_key?(callbacks, destination) do
       true -> %{ callbacks | destination => dest_callbacks}
       false -> Map.merge(callbacks, %{ destination => dest_callbacks })
     end
@@ -107,11 +107,11 @@ defmodule Stompex do
   function instead.
   """
   def handle_call({ :remove_callback, destination, func }, _, %{ callbacks: callbacks } = state) do
-    dest_callbacks = Dict.get(callbacks, destination, [])
+    dest_callbacks = Map.get(callbacks, destination, [])
     dest_callbacks = List.delete(dest_callbacks, func)
 
     callbacks = cond do
-      Dict.has_key?(callbacks, destination) && dest_callbacks == [] ->
+      Map.has_key?(callbacks, destination) && dest_callbacks == [] ->
         Map.delete(callbacks, destination)
 
       dest_callbacks != [] ->
@@ -124,7 +124,7 @@ defmodule Stompex do
 
   @doc false
   def handle_call({ :subscribe, destination, headers, opts }, _, %{ subscriptions: subscriptions } = state) do
-    case Dict.has_key?(subscriptions, destination) do
+    case Map.has_key?(subscriptions, destination) do
       true ->
         { :reply, { :error, "You have already subscribed to this destination" }, state }
       false ->
@@ -134,7 +134,7 @@ defmodule Stompex do
 
   @doc false
   def handle_call({ :unsubscribe, destination }, _, %{ subscriptions: subscriptions } = state) do
-    case Dict.has_key?(subscriptions, destination) do
+    case Map.has_key?(subscriptions, destination) do
       true ->
         unsubscribe_from_destination(destination, state)
       false ->
@@ -233,7 +233,7 @@ defmodule Stompex do
     frame = decompress_frame(frame, dest, state)
 
     callbacks
-    |> Dict.get(dest, [])
+    |> Map.get(dest, [])
     |> Enum.each(fn(func) -> func.(frame) end)
 
     Stompex.Receiver.next_frame(receiver)

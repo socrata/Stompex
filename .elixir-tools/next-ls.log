@@ -1,0 +1,50 @@
+
+11:12:00.396 [debug] handled notification client -> server textDocument/didChange in 1ms
+
+11:12:00.397 [debug] handled notification client -> server textDocument/didChange in 397µs
+
+11:12:00.397 [debug] handled notification client -> server workspace/didChangeWatchedFiles in 417µs
+
+11:12:01.147 id=278 [debug] handled request client -> server textDocument/documentSymbol in 5ms
+
+11:12:02.038 id=279 [debug] handled request client -> server textDocument/documentSymbol in 6ms
+
+11:12:19.114 id=280 [debug] handled request client -> server textDocument/hover in 1001ms
+
+11:12:19.114 [debug] handled notification client -> server $/cancelRequest in 29µs
+
+11:12:19.115 [debug] handled notification client -> server textDocument/didChange in 966µs
+
+11:12:19.115 [debug] handled notification client -> server textDocument/didSave in 209µs
+
+11:12:19.220 id=281 [debug] handled request client -> server textDocument/documentSymbol in 3ms
+
+11:12:19.224 id=282 [debug] handled request client -> server textDocument/documentSymbol in 3ms
+
+11:12:19.231 [debug] handled notification client -> server workspace/didChangeWatchedFiles in 144µs
+
+11:12:20.777 [debug] handled notification client -> server textDocument/didSave in 194µs
+
+11:12:21.114 [debug] handled notification client -> server workspace/didChangeWatchedFiles in 185µs
+
+11:12:47.116 id=283 [debug] handled request client -> server textDocument/codeAction in 572µs
+
+11:12:58.713 id=284 [debug] handled request client -> server textDocument/hover in 1001ms
+
+11:12:58.713 [debug] handled notification client -> server $/cancelRequest in 43µs
+
+11:12:58.713 [debug] handled notification client -> server textDocument/didChange in 350µs
+
+11:12:58.714 [debug] handled notification client -> server textDocument/didSave in 245µs
+
+11:12:59.714 id=285 [debug] handled request client -> server textDocument/hover in 1000ms
+
+11:12:59.715 id=286 [debug] handled request client -> server textDocument/codeAction in 1ms
+
+11:12:59.719 id=287 [debug] handled request client -> server textDocument/documentSymbol in 3ms
+
+11:12:59.721 id=288 [debug] handled request client -> server textDocument/documentSymbol in 2ms
+
+11:12:59.722 [debug] handled notification client -> server workspace/didChangeWatchedFiles in 221µs
+
+11:12:59.722 [debug] handled notification client -> server $/cancelRequest in 619µs
