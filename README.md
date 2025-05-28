@@ -13,7 +13,7 @@ this repo.
 
 ```elixir
 def deps do
-  [{:stompex, git: "git@github.com:manageplaces/Stompex.git"}]
+  [{:stompex, git: "git@github.com:git-steven/Stompex.git"}]
 end
 ```
 
@@ -21,7 +21,7 @@ or
 
 ```elixir
 def deps do
-  [{`:stompex, git: "https://github.com/manageplaces/Stomex.git"}]
+  [{:stompex, git: "https://github.com/manageplaces/Stomex.git"}]
 end
 ```
 
