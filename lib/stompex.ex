@@ -13,7 +13,7 @@ defmodule Stompex do
   # CHANGE: Add a default reconnect interval since Connection handled this automatically
   @reconnect_interval 1000
 
-   def start_link(opts) when is_list(opts) do
+  def start_link(opts) when is_list(opts) do
     GenServer.start_link(__MODULE__, opts, name: opts[:name])
   end
 
