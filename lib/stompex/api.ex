@@ -331,7 +331,7 @@ defmodule Stompex.Api do
       registered callback for the given destination, or the calling
       process depending on configuration
       """
-      @spec send(pid, String.t, String.t) :: :ok | { :error, :gen_tcp.reason }
+      @spec send(pid, String.t, String.t) :: :ok | { :error, any() }
       def send(conn, destination, message) do
         GenServer.call(conn, { :send, destination, message })
       end

@@ -12,12 +12,12 @@ defmodule Stompex.Connection do
   this is not specified, it will default to
   "\n".
   """
-  @spec read_line(:gen_tcp.socket, String.t) :: { :ok, String.t } | { :error, :gen_tcp.reason }
+  @spec read_line(:ssl.socket, String.t) :: { :ok, String.t } | { :error, any() }
   def read_line(conn, delim \\ "\n") do
     conn
     |> set_delimeter(delim)
     |> set_packet_type(:line)
-    |> :gen_tcp.recv(0)
+    |> :ssl.recv(0)
   end
 
   @doc """
@@ -25,7 +25,7 @@ defmodule Stompex.Connection do
   a non-blank line is found. Similar to `read_line/2`
   the delimeter can be specified.
   """
-  @spec fast_forward(:gen_tcp.socket, String.t) :: { :ok, String.t } | { :error, :gen_tcp.reason }
+  @spec fast_forward(:ssl.socket, String.t) :: { :ok, String.t } | { :error, any() }
   def fast_forward(conn, delim \\ "\n") do
     fast_forward(conn, delim, read_line(conn, delim))
   end
@@ -48,22 +48,22 @@ defmodule Stompex.Connection do
   until a null character, as the contents may
   contain a null character.
   """
-  @spec read_bytes(:gen_tcp.socket, String.t) :: { :ok, String.t } | { :error, :gen_tcp.reason }
+  @spec read_bytes(:ssl.socket, String.t) :: { :ok, String.t } | { :error, any() }
   def read_bytes(conn, length) when is_binary(length) do
     read_bytes(conn, String.to_integer(length))
   end
-  @spec read_bytes(:gen_tcp.socket, integer) :: { :ok, String.t } | { :error, :gen_tcp.reason }
+  @spec read_bytes(:ssl.socket, integer) :: { :ok, String.t } | { :error, any() }
   def read_bytes(conn, length) do
     conn
     |> set_packet_type(:raw)
-    |> :gen_tcp.recv(length)
+    |> :ssl.recv(length)
   end
 
 
   # Sets the line delimeter of the specified
   # connection.
   defp set_delimeter(conn, delim) do
-    :inet.setopts(conn, line_delimeter: delim)
+    :ssl.setopts(conn, line_delimeter: delim)
     conn
   end
 
@@ -71,7 +71,7 @@ defmodule Stompex.Connection do
   # between reading lines at a time, to reading
   # a specific number of bytes
   defp set_packet_type(conn, type) do
-    :inet.setopts(conn, packet: type)
+    :ssl.setopts(conn, packet: type)
     conn
   end
 
