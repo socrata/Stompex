@@ -13,8 +13,21 @@ defmodule Stompex do
   # CHANGE: Add a default reconnect interval since Connection handled this automatically
   @reconnect_interval 1000
 
-   def start_link(opts) when is_list(opts) do
-    GenServer.start_link(__MODULE__, opts, name: opts[:name])
+  # CHANGE: Updated start_link to match the Api module's interface
+  # This replaces both Connection.start_link and the Api module's init logic
+  def start_link(host, port, login, passcode, headers, timeout) do
+    # CHANGE: Convert positional arguments to keyword list for cleaner handling
+    opts = [
+      host: host,
+      port: port,
+      login: login,
+      passcode: passcode,
+      headers: headers,
+      timeout: timeout,
+      calling_process: self()
+    ]
+
+    GenServer.start_link(__MODULE__, opts)
   end
 
   # CHANGE: Implement init/1 callback required by GenServer
@@ -97,7 +110,6 @@ defmodule Stompex do
         stomp_connect(sock, state)
 
       {:error, reason} = error ->
-        Logger.warning("#{__MODULE__}.do_connect error -- reason: #{inspect(reason)}, error: #{inspect(error)}")
         error
     end
   end
@@ -184,7 +196,7 @@ defmodule Stompex do
   # These replace Connection behavior's automatic handling
   @impl true
   def handle_info({:tcp_closed, _sock}, state) do
-    Logger.warning("TCP connection closed")
+    Logger.warn("TCP connection closed")
     handle_connection_loss(state)
   end
 
@@ -318,7 +330,7 @@ defmodule Stompex do
 
   @impl true
   def handle_cast({:nack, _frame}, %{version: 1.0} = state) do
-    Logger.warning("'NACK' frame was requested, but is not valid for version 1.0 of the STOMP protocol. Ignoring")
+    Logger.warn("'NACK' frame was requested, but is not valid for version 1.0 of the STOMP protocol. Ignoring")
     {:noreply, state}
   end
 
