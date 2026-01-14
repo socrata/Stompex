@@ -3,31 +3,36 @@ defmodule Stompex.Api do
 
   defmacro __using__(_opts) do
     quote do
+
       @connection_timeout 10_000
       @default_stomp_port 61618
 
       @doc false
       def start_link(host, port, login, passcode, headers, timeout \\ @connection_timeout) do
-        # CHANGE: Call Stompex's start_link (which now uses GenServer.start_link)
-        # instead of Connection.start_link
-        # Pass all parameters as a keyword list for cleaner handling
-        opts = [
-          host: host,
-          port: port,
-          login: login,
-          passcode: passcode,
-          headers: headers,
-          timeout: timeout,
-          calling_process: self()
-        ]
-
-        # CHANGE: Stompex now handles its own start_link
-        GenServer.start_link(Stompex, opts)
+        Connection.start_link(__MODULE__, { host, port, login, passcode, headers, timeout, self() })
       end
 
-      # CHANGE: Remove the init/1 function from Api module
-      # The init logic is now handled directly in the Stompex module's init/1
-      # This avoids confusion between the Api init and the GenServer init
+      @doc false
+      def init({ host, port, login, passcode, headers, timeout, calling_process }) do
+        headers = Map.merge(%{ "accept-version" => "1.2", "login" => login, "passcode" => passcode }, headers)
+        state = %{
+          sock: nil,
+          host: host,
+          port: port,
+          headers: headers,
+          timeout: timeout,
+          callbacks: %{},
+          subscriptions: %{},
+          subscription_id: 0,
+          calling_process: calling_process,
+          send_to_caller: false,
+          receiver: nil,
+          version: Stompex.Validator.normalise_version(headers["accept-version"])
+        }
+
+        { :connect, :init, state }
+      end
+
 
       @doc """
       Connects to a remote STOMP server using the application
@@ -56,7 +61,6 @@ defmodule Stompex.Api do
         passcode  = env[:passcode] || ""
         headers   = env[:headers] || %{}
 
-        # CHANGE: This now calls the refactored start_link
         Stompex.start_link(host, port, login, passcode, headers)
       end
 
@@ -100,6 +104,7 @@ defmodule Stompex.Api do
         Stompex.start_link(host, port, login, passcode, headers)
       end
 
+
       @doc """
       Disconnect from the remote stomp server. This will
       close the underlying TCP connection, remove all
@@ -108,8 +113,7 @@ defmodule Stompex.Api do
       """
       @spec disconnect(pid) :: term
       def disconnect(conn) do
-        # CHANGE: Use GenServer.call instead of Connection.call
-        GenServer.call(conn, :close)
+        Connection.call(conn, :close)
       end
 
       @doc """
@@ -274,6 +278,7 @@ defmodule Stompex.Api do
         GenServer.cast(conn, { :send_to_caller, send })
       end
 
+
       @doc """
       Send an acknowledgement of a message back to the server.
       This is not required unless your STOMP server explicitly
@@ -316,6 +321,7 @@ defmodule Stompex.Api do
         GenServer.cast(conn, { :nack, frame })
       end
 
+
       @doc """
       Send a message to the specified destination. This function
       will return the raw response of the underlying TCP connection
@@ -329,6 +335,8 @@ defmodule Stompex.Api do
       def send(conn, destination, message) do
         GenServer.call(conn, { :send, destination, message })
       end
+
     end
   end
+
 end
