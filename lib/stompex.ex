@@ -65,17 +65,22 @@ defmodule Stompex do
   end
 
   defp connected_with_frame(%{ cmd: "CONNECTED", headers: headers }, %{ receiver: receiver } = state) do
-    case headers["version"] do
-      nil ->
+    # There appears to be a bug with `ActiveMQ/5.19.2` wherein its `CONNECTED` frame includes
+    # `value` rather than `version`.
+    cond do
+      headers["version"] ->
+        Logger.debug("Stompex using protocol version #{headers["version"]}")
+        Stompex.Receiver.set_version(receiver, headers["version"])
+        { :ok, %{ state | version: headers["version"] } }
+      headers["value"] ->
+        Logger.debug("Stompex using protocol version #{headers["value"]}")
+        Stompex.Receiver.set_version(receiver, headers["value"])
+        { :ok, %{ state | version: headers["value"] } }
+      true ->
         # No version returned, so we're running on a version 1.0 server
         Logger.debug("STOMP server supplied no version. Reverting to version 1.0")
         Stompex.Receiver.set_version(receiver, 1.0)
         { :ok, %{ state | version: 1.0 } }
-
-      version ->
-        Logger.debug("Stompex using protocol version #{version}")
-        Stompex.Receiver.set_version(receiver, version)
-        { :ok, %{ state | version: version } }
     end
   end
   defp connected_with_frame(%{ cmd: "ERROR", headers: headers }, _state) do
