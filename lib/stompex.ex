@@ -201,11 +201,22 @@ defmodule Stompex do
     { :noreply, state }
   end
   @doc false
-  def handle_cast({ :nack, frame }, %{ sock: sock } = state ) do
+  def handle_cast({ :nack, frame }, %{ version: 1.1, sock: sock } = state ) do
     frame =
       nack_frame()
       |> put_header("message-id", frame.headers["message-id"])
       |> put_header("subscription", frame.headers["subscription"])
+      |> finish_frame()
+
+    :ssl.send(sock, frame)
+    { :noreply, state }
+  end
+
+  @doc false
+  def handle_cast({ :nack, frame }, %{ version: 1.2, sock: sock } = state ) do
+    frame =
+      nack_frame()
+      |> put_header("id", frame.headers["ack"])
       |> finish_frame()
 
     :ssl.send(sock, frame)
