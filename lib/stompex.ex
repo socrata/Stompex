@@ -261,8 +261,8 @@ defmodule Stompex do
       :ok ->
         # Great we've subscribed. Now keep track of it
         subscription = %{
-          id: frame.headers[:id],
-          ack: frame.headers[:ack],
+          id: frame.headers["id"],
+          ack: frame.headers["ack"],
           compressed: Keyword.get(opts, :compressed, false)
         }
 
