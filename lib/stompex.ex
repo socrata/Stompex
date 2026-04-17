@@ -184,6 +184,18 @@ defmodule Stompex do
 
 
   @doc false
+  def handle_cast({ :acknowledge, frame }, %{ version: 1.2, sock: sock } = state) do
+    frame =
+      ack_frame()
+      |> put_header("id", frame.headers["ack"])
+      |> finish_frame()
+
+    :ssl.send(sock, frame)
+
+    { :noreply, state }
+  end
+
+  @doc false
   def handle_cast({ :acknowledge, frame }, %{ sock: sock } = state) do
     frame =
       ack_frame()
