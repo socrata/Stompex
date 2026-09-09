@@ -161,7 +161,7 @@ defmodule Stompex do
       frame
       |> put_header("destination", destination)
       |> put_header("content-length", byte_size(frame.body))
-      |> put_header("persistent", true)
+      |> put_header("persistent", "true")
       |> finish_frame()
 
     response = :ssl.send(sock, frame)
