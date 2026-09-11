@@ -5,11 +5,13 @@ defmodule Stompex do
 
   import Stompex.FrameBuilder
 
-  @tcp_opts [:binary, active: false]
+  @ssl_opts [:binary, active: false, verify: :verify_none]
 
   @doc false
   def connect(_info, %{ sock: nil, host: host, port: port, timeout: timeout } = state) do
-    case :gen_tcp.connect(to_charlist(host), port, @tcp_opts, timeout) do
+    :ssl.start
+
+    case :ssl.connect(to_charlist(host), port, @ssl_opts, timeout) do
       { :ok, sock } ->
         stomp_connect(sock, state)
 
@@ -28,9 +30,9 @@ defmodule Stompex do
     Connection.reply(from, :ok)
     GenServer.stop(receiver)
 
-    case :gen_tcp.send(sock, frame) do
+    case :ssl.send(sock, frame) do
       :ok ->
-        :gen_tcp.close(sock)
+        :ssl.close(sock)
         { :reply, :ok, %{ state | sock: nil, receiver: nil } }
 
       { :error, _ } = error ->
@@ -49,7 +51,7 @@ defmodule Stompex do
       |> put_headers(state[:headers])
       |> finish_frame()
 
-    with :ok <- :gen_tcp.send(conn, frame),
+    with :ok <- :ssl.send(conn, frame),
          { :ok, receiver } <- Stompex.Receiver.start_link(conn),
           { :ok, frame } <- Stompex.Receiver.receive_frame(receiver)
     do
@@ -63,17 +65,22 @@ defmodule Stompex do
   end
 
   defp connected_with_frame(%{ cmd: "CONNECTED", headers: headers }, %{ receiver: receiver } = state) do
-    case headers["version"] do
-      nil ->
+    # There appears to be a bug with `ActiveMQ/5.19.2` wherein its `CONNECTED` frame includes
+    # `value` rather than `version`.
+    cond do
+      headers["version"] ->
+        Logger.debug("Stompex using protocol version #{headers["version"]}")
+        Stompex.Receiver.set_version(receiver, headers["version"])
+        { :ok, %{ state | version: headers["version"] } }
+      headers["value"] ->
+        Logger.debug("Stompex using protocol version #{headers["value"]}")
+        Stompex.Receiver.set_version(receiver, headers["value"])
+        { :ok, %{ state | version: headers["value"] } }
+      true ->
         # No version returned, so we're running on a version 1.0 server
         Logger.debug("STOMP server supplied no version. Reverting to version 1.0")
         Stompex.Receiver.set_version(receiver, 1.0)
         { :ok, %{ state | version: 1.0 } }
-
-      version ->
-        Logger.debug("Stompex using protocol version #{version}")
-        Stompex.Receiver.set_version(receiver, version)
-        { :ok, %{ state | version: version } }
     end
   end
   defp connected_with_frame(%{ cmd: "ERROR", headers: headers }, _state) do
@@ -156,7 +163,7 @@ defmodule Stompex do
       |> put_header("content-length", byte_size(frame.body))
       |> finish_frame()
 
-    response = :gen_tcp.send(sock, frame)
+    response = :ssl.send(sock, frame)
     { :reply, response, state }
   end
 
@@ -169,12 +176,24 @@ defmodule Stompex do
       |> set_body(message)
       |> finish_frame()
 
-    response = :gen_tcp.send(sock, frame)
+    response = :ssl.send(sock, frame)
     { :reply, response, state }
   end
 
 
 
+
+  @doc false
+  def handle_cast({ :acknowledge, frame }, %{ version: 1.2, sock: sock } = state) do
+    frame =
+      ack_frame()
+      |> put_header("id", frame.headers["ack"])
+      |> finish_frame()
+
+    :ssl.send(sock, frame)
+
+    { :noreply, state }
+  end
 
   @doc false
   def handle_cast({ :acknowledge, frame }, %{ sock: sock } = state) do
@@ -184,7 +203,7 @@ defmodule Stompex do
       |> put_header("subscription", frame.headers["subscription"])
       |> finish_frame()
 
-    :gen_tcp.send(sock, frame)
+    :ssl.send(sock, frame)
 
     { :noreply, state }
   end
@@ -194,14 +213,25 @@ defmodule Stompex do
     { :noreply, state }
   end
   @doc false
-  def handle_cast({ :nack, frame }, %{ sock: sock } = state ) do
+  def handle_cast({ :nack, frame }, %{ version: 1.1, sock: sock } = state ) do
     frame =
       nack_frame()
       |> put_header("message-id", frame.headers["message-id"])
       |> put_header("subscription", frame.headers["subscription"])
       |> finish_frame()
 
-    :gen_tcp.send(sock, frame)
+    :ssl.send(sock, frame)
+    { :noreply, state }
+  end
+
+  @doc false
+  def handle_cast({ :nack, frame }, %{ version: 1.2, sock: sock } = state ) do
+    frame =
+      nack_frame()
+      |> put_header("id", frame.headers["ack"])
+      |> finish_frame()
+
+    :ssl.send(sock, frame)
     { :noreply, state }
   end
 
@@ -255,12 +285,12 @@ defmodule Stompex do
 
     state = %{ state | subscription_id: (id + 1) }
 
-    case :gen_tcp.send(sock, finish_frame(frame)) do
+    case :ssl.send(sock, finish_frame(frame)) do
       :ok ->
         # Great we've subscribed. Now keep track of it
         subscription = %{
-          id: frame.headers[:id],
-          ack: frame.headers[:ack],
+          id: frame.headers["id"],
+          ack: frame.headers["ack"],
           compressed: Keyword.get(opts, :compressed, false)
         }
 
@@ -280,7 +310,7 @@ defmodule Stompex do
       |> put_header("id", subscription[:id])
       |> finish_frame()
 
-    case :gen_tcp.send(sock, frame) do
+    case :ssl.send(sock, frame) do
       :ok ->
         { :noreply, %{ state | subscriptions: Map.delete(subscriptions, destination)}}
 
